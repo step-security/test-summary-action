@@ -19,7 +19,7 @@ const failIconUrl = "https://svg.test-summary.com/icon/fail.svg?s=12";
 const skipIconUrl = "https://svg.test-summary.com/icon/skip.svg?s=12";
 // not used: const noneIconUrl = 'https://svg.test-summary.com/icon/none.svg?s=12'
 const unnamedTestCase = "<no name>";
-const footer = `This test report was produced by the <a href="https://github.com/test-summary/action">test-summary action</a>.&nbsp; Made with ❤️ in Cambridge.`;
+const footer = `This test report was produced by the <a href="https://github.com/step-security/test-summary-action">test-summary action</a>.&nbsp; Made with ❤️ in Cambridge.`;
 function dashboardSummary(result) {
     const count = result.counts;
     let summary = "";
