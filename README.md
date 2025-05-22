@@ -151,8 +151,6 @@ FAQ
 * **How is the summary graphic generated? Does any of my data ever leave GitHub?**  
   None of your data ever leaves GitHub. Test results are read within GitHub Actions by the test-summary action, and a link to an SVG with the test results numbers is created. This the graphic is both fetched and subsequently cached by GitHub's image service. This service provides no referral information to remote hosts. This means that no information at all about your workflow - the repository name, test results, or other information - is available to the image generator service.
 
-Questions / Help / Contact
---------------------------
-Have questions? Need help? Visit [the discussion forum](https://github.com/step-security/test-summary-action/discussions).
 
 Copyright (c) 2022 Edward Thomson. Available under the MIT license.
+Copyright (c) 2025 Step Security. Available under the MIT license.
