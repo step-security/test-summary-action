@@ -10,7 +10,7 @@ inputs:
   show:
     description: Types of tests to show in the results table
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
 branding:
   icon: check-square
