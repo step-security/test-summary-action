@@ -1,0 +1,7 @@
+[[IgnoredVulns]]
+id = "GHSA-5c6j-r48x-rmvq"
+reason = "serialize-javascript is a transitive dev dependency of mocha (test runner only). Not bundled in the action's runtime, so there is no production impact."
+
+[[IgnoredVulns]]
+id = "GHSA-qj8w-gfj5-8c6v"
+reason = "serialize-javascript is a transitive dev dependency of mocha (test runner only). Not bundled in the action's runtime, so there is no production impact."
