@@ -1,7 +1,7 @@
 import { expect } from "chai"
 
-import { TestStatus, TestResult } from "../src/test_parser"
-import { dashboardResults } from "../src/dashboard"
+import { TestStatus, TestResult } from "../src/test_parser.js"
+import { dashboardResults } from "../src/dashboard.js"
 
 describe("dashboard", async () => {
     it("escapes HTML entities", async () => {
@@ -13,28 +13,32 @@ describe("dashboard", async () => {
                         {
                             status: TestStatus.Fail,
                             name: "name escaped <properly>", // "<" and ">" require escaping
-                            description: "description escaped \"properly\"", // double quotes require escaping
+                            description: 'description escaped "properly"' // double quotes require escaping
                         },
                         {
                             status: TestStatus.Fail,
                             name: "another name escaped 'properly'", // single quotes require escaping
-                            description: "another description escaped & properly", // ampersand requires escaping
+                            description:
+                                "another description escaped & properly" // ampersand requires escaping
                         },
                         {
                             status: TestStatus.Fail,
                             name: "entities ' are & escaped < in > proper & order",
-                            description: "order is important in a multi-pass replacement",
+                            description:
+                                "order is important in a multi-pass replacement"
                         }
                     ]
                 }
             ]
         }
-        const actual = dashboardResults(result, TestStatus.Fail)
+        const actual = dashboardResults(result, TestStatus.Fail, false)
         expect(actual).contains("name escaped &lt;properly&gt;")
         expect(actual).contains("description escaped &quot;properly&quot;")
         expect(actual).contains("another name escaped &apos;properly&apos;")
         expect(actual).contains("another description escaped &amp; properly")
-        expect(actual).contains("entities &apos; are &amp; escaped &lt; in &gt; proper &amp; order")
+        expect(actual).contains(
+            "entities &apos; are &amp; escaped &lt; in &gt; proper &amp; order"
+        )
     })
 
     it("uses <no name> for test cases without name", async () => {
@@ -44,14 +48,14 @@ describe("dashboard", async () => {
                 {
                     cases: [
                         {
-                            status: TestStatus.Fail,
+                            status: TestStatus.Fail
                             // <-- no name
                         }
                     ]
                 }
             ]
         }
-        const actual = dashboardResults(result, TestStatus.Fail)
+        const actual = dashboardResults(result, TestStatus.Fail, false)
         expect(actual).contains("&lt;no name&gt;")
     })
 
@@ -72,7 +76,7 @@ describe("dashboard", async () => {
             ]
         }
 
-        const actual = dashboardResults(result, TestStatus.Fail)
+        const actual = dashboardResults(result, TestStatus.Fail, false)
 
         expect(actual).contains("message escaped &lt;properly&gt;")
         expect(actual).contains("details escaped &lt;properly&gt;")

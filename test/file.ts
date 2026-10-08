@@ -1,13 +1,15 @@
 import * as chai from "chai"
-import chaiAsPromised from 'chai-as-promised'
+import chaiAsPromised from "chai-as-promised"
 import { expect } from "chai"
 
-import { TestStatus, parseFile } from "../src/test_parser"
+import { parseFile } from "../src/test_parser.js"
+import { resourcePath } from "./common.js"
 
 chai.use(chaiAsPromised)
 
-const tapResourcePath = `${__dirname}/resources/tap`
-const junitResourcePath = `${__dirname}/resources/junit`
+const tapResourcePath = `${resourcePath}/resources/tap`
+const junitResourcePath = `${resourcePath}/resources/junit`
+const trxResourcePath = `${resourcePath}/resources/trx`
 
 describe("file", async () => {
     it("identifies common tap", async () => {
@@ -18,7 +20,9 @@ describe("file", async () => {
     })
 
     it("identifies creative liberties tap", async () => {
-        const result = await parseFile(`${tapResourcePath}/07-creative-liberties.tap`)
+        const result = await parseFile(
+            `${tapResourcePath}/07-creative-liberties.tap`
+        )
         expect(result.counts.passed).to.eql(9)
         expect(result.counts.failed).to.eql(0)
         expect(result.counts.skipped).to.eql(0)
@@ -32,7 +36,9 @@ describe("file", async () => {
     })
 
     it("rejects invalid tap file", async () => {
-        expect(parseFile(`${tapResourcePath}/10-results-after-trailer.tap`)).to.be.rejectedWith(Error)
+        expect(
+            parseFile(`${tapResourcePath}/10-results-after-trailer.tap`)
+        ).to.be.rejectedWith(Error)
     })
 
     it("identifies common junit", async () => {
@@ -54,5 +60,19 @@ describe("file", async () => {
         expect(result.counts.passed).to.eql(4)
         expect(result.counts.failed).to.eql(4)
         expect(result.counts.skipped).to.eql(2)
+    })
+
+    it("identifies empty junit", async () => {
+        const result = await parseFile(`${junitResourcePath}/05-empty.xml`)
+        expect(result.counts.passed).to.eql(0)
+        expect(result.counts.failed).to.eql(0)
+        expect(result.counts.skipped).to.eql(0)
+    })
+
+    it("identifies trx", async () => {
+        const result = await parseFile(`${trxResourcePath}/example.trx`)
+        expect(result.counts.passed).to.eql(3)
+        expect(result.counts.failed).to.eql(1)
+        expect(result.counts.skipped).to.eql(0)
     })
 })

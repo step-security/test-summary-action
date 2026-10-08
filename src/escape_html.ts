@@ -6,6 +6,6 @@ const lookup: Record<string, string> = {
     ">": "&gt;"
 }
 
-export default function escapeHTML(s: string): string {
-    return s.replace(/[&"'<>]/g, c => lookup[c])
+export default function escapeHTML(s: any): string {
+    return String(s).replace(/[&"'<>]/g, c => lookup[c] || c)
 }

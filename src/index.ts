@@ -1,57 +1,62 @@
 import * as fs from "fs"
 import * as util from "util"
 import * as core from "@actions/core"
-import * as glob from "glob-promise"
+import * as glob from "glob"
 
-import { TestResult, TestStatus, parseFile } from "./test_parser"
-import { dashboardResults, dashboardSummary } from "./dashboard"
+import {
+    TestResult,
+    TestStatus,
+    parseFile,
+    getTestStatusName
+} from "./test_parser.js"
+import { dashboardResults, dashboardSummary } from "./dashboard.js"
 import axios, { isAxiosError } from "axios"
 
 async function validateSubscription(): Promise<void> {
-  const eventPath = process.env.GITHUB_EVENT_PATH
-  let repoPrivate: boolean | undefined
+    const eventPath = process.env.GITHUB_EVENT_PATH
+    let repoPrivate: boolean | undefined
 
-  if (eventPath && fs.existsSync(eventPath)) {
-    const eventData = JSON.parse(fs.readFileSync(eventPath, 'utf8'))
-    repoPrivate = eventData?.repository?.private
-  }
-
-  const upstream = 'test-summary/action'
-  const action = process.env.GITHUB_ACTION_REPOSITORY
-  const docsUrl =
-    'https://docs.stepsecurity.io/actions/stepsecurity-maintained-actions'
-
-  core.info('')
-  core.info('[1;36mStepSecurity Maintained Action[0m')
-  core.info(`Secure drop-in replacement for ${upstream}`)
-  if (repoPrivate === false)
-    core.info('[32m✓ Free for public repositories[0m')
-  core.info(`[36mLearn more:[0m ${docsUrl}`)
-  core.info('')
-
-  if (repoPrivate === false) return
-
-  const serverUrl = process.env.GITHUB_SERVER_URL || 'https://github.com'
-  const body: Record<string, string> = {action: action || ''}
-  if (serverUrl !== 'https://github.com') body.ghes_server = serverUrl
-  try {
-    await axios.post(
-      `https://agent.api.stepsecurity.io/v1/github/${process.env.GITHUB_REPOSITORY}/actions/maintained-actions-subscription`,
-      body,
-      {timeout: 3000}
-    )
-  } catch (error) {
-    if (isAxiosError(error) && error.response?.status === 403) {
-      core.error(
-        `[1;31mThis action requires a StepSecurity subscription for private repositories.[0m`
-      )
-      core.error(
-        `[31mLearn how to enable a subscription: ${docsUrl}[0m`
-      )
-      process.exit(1)
+    if (eventPath && fs.existsSync(eventPath)) {
+        const eventData = JSON.parse(fs.readFileSync(eventPath, "utf8"))
+        repoPrivate = eventData?.repository?.private
     }
-    core.info('Timeout or API not reachable. Continuing to next step.')
-  }
+
+    const upstream = "test-summary/action"
+    const action = process.env.GITHUB_ACTION_REPOSITORY
+    const docsUrl =
+        "https://docs.stepsecurity.io/actions/stepsecurity-maintained-actions"
+
+    core.info("")
+    core.info("\u001b[1;36mStepSecurity Maintained Action\u001b[0m")
+    core.info(`Secure drop-in replacement for ${upstream}`)
+    if (repoPrivate === false)
+        core.info("\u001b[32m✓ Free for public repositories\u001b[0m")
+    core.info(`\u001b[36mLearn more:\u001b[0m ${docsUrl}`)
+    core.info("")
+
+    if (repoPrivate === false) return
+
+    const serverUrl = process.env.GITHUB_SERVER_URL || "https://github.com"
+    const body: Record<string, string> = { action: action || "" }
+    if (serverUrl !== "https://github.com") body.ghes_server = serverUrl
+    try {
+        await axios.post(
+            `https://agent.api.stepsecurity.io/v1/github/${process.env.GITHUB_REPOSITORY}/actions/maintained-actions-subscription`,
+            body,
+            { timeout: 3000 }
+        )
+    } catch (error) {
+        if (isAxiosError(error) && error.response?.status === 403) {
+            core.error(
+                `\u001b[1;31mThis action requires a StepSecurity subscription for private repositories.\u001b[0m`
+            )
+            core.error(
+                `\u001b[31mLearn how to enable a subscription: ${docsUrl}\u001b[0m`
+            )
+            process.exit(1)
+        }
+        core.info("Timeout or API not reachable. Continuing to next step.")
+    }
 }
 
 async function run(): Promise<void> {
@@ -61,6 +66,7 @@ async function run(): Promise<void> {
         const outputFile =
             core.getInput("output") || process.env.GITHUB_STEP_SUMMARY || "-"
         const showList = core.getInput("show")
+        const folded = JSON.parse(core.getInput("folded") || "false")
 
         /*
          * Given paths may either be an individual path (eg "foo.xml"),
@@ -71,7 +77,7 @@ async function run(): Promise<void> {
 
         for (const path of pathGlobs.split(/\r?\n/)) {
             if (glob.hasMagic(path)) {
-                paths.push(...(await glob.promise(path)))
+                paths.push(...(await glob.glob(path)))
             } else {
                 paths.push(path.trim())
             }
@@ -79,7 +85,7 @@ async function run(): Promise<void> {
 
         let show = TestStatus.Fail
         if (showList) {
-            show = 0
+            show = TestStatus.None
 
             for (const showName of showList.split(/,\s*/)) {
                 if (showName === "none") {
@@ -120,14 +126,14 @@ async function run(): Promise<void> {
             )
 
             let showInfo = "Tests to show:"
-            if (show === TestStatus.Fail) {
+            if (show === 0) {
                 showInfo += " none"
             }
             for (const showName in TestStatus) {
                 const showType = Number(showName)
 
                 if (!isNaN(showType) && (show & showType) == showType) {
-                    showInfo += ` ${TestStatus[showType]}`
+                    showInfo += ` ${getTestStatusName(showType)}`
                 }
             }
             core.debug(showInfo)
@@ -156,7 +162,7 @@ async function run(): Promise<void> {
         let output = dashboardSummary(total)
 
         if (show) {
-            output += dashboardResults(total, show)
+            output += dashboardResults(total, show, folded)
         }
 
         if (outputFile === "-") {

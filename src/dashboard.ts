@@ -1,5 +1,5 @@
-import escapeHTML from "./escape_html"
-import { TestResult, TestStatus } from "./test_parser"
+import escapeHTML from "./escape_html.js"
+import { TestResult, TestStatus } from "./test_parser.js"
 
 const dashboardUrl = "https://svg.test-summary.com/dashboard.svg"
 const passIconUrl = "https://svg.test-summary.com/icon/pass.svg?s=12"
@@ -9,7 +9,7 @@ const skipIconUrl = "https://svg.test-summary.com/icon/skip.svg?s=12"
 
 const unnamedTestCase = "<no name>"
 
-const footer = `This test report was produced by the <a href="https://github.com/step-security/test-summary-action">test-summary action</a>.&nbsp; Made with ❤️ in Cambridge.`
+const footer = `This test report was produced by the <a href="https://github.com/test-summary/action">test-summary action</a>.&nbsp; Made with ❤️ in Cambridge.`
 
 export function dashboardSummary(result: TestResult): string {
     const count = result.counts
@@ -28,7 +28,11 @@ export function dashboardSummary(result: TestResult): string {
     return `<img src="${dashboardUrl}?p=${count.passed}&f=${count.failed}&s=${count.skipped}" alt="${summary}">`
 }
 
-export function dashboardResults(result: TestResult, show: number): string {
+export function dashboardResults(
+    result: TestResult,
+    show: number,
+    folded: boolean
+): string {
     let table = "<table>"
     let count = 0
 
@@ -41,6 +45,9 @@ export function dashboardResults(result: TestResult, show: number): string {
             }
 
             table += "<tr><td>"
+            if (folded) {
+                table += "<details><summary>"
+            }
 
             const icon = statusIcon(testcase.status)
             if (icon) {
@@ -53,6 +60,10 @@ export function dashboardResults(result: TestResult, show: number): string {
             if (testcase.description) {
                 table += ": "
                 table += escapeHTML(testcase.description)
+            }
+
+            if (folded) {
+                table += "</summary>"
             }
 
             if (testcase.message || testcase.details) {
@@ -71,6 +82,10 @@ export function dashboardResults(result: TestResult, show: number): string {
                 }
             }
 
+            if (folded) {
+                table += "</details>"
+            }
+
             table += "</td></tr>\n"
 
             count++
@@ -87,7 +102,7 @@ export function dashboardResults(result: TestResult, show: number): string {
     return table
 }
 
-function statusTitle(status: TestStatus): string {
+function statusTitle(status: number): string {
     switch (status) {
         case TestStatus.Fail:
             return "Test failures"
@@ -100,7 +115,7 @@ function statusTitle(status: TestStatus): string {
     }
 }
 
-function statusIcon(status: TestStatus): string | undefined {
+function statusIcon(status: number): string | undefined {
     switch (status) {
         case TestStatus.Pass:
             return `<img src="${passIconUrl}" alt="" />`
