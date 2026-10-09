@@ -15,7 +15,7 @@ on:
         description: "Specify the build script to run"
         required: false
         type: string
-        default: "npm run all"
+        default: "npm run build && npm run package"
       node_version:
         description: "Specify Node.js version (e.g., '18', '20', 'lts/*')"
         required: false
@@ -29,7 +29,7 @@ jobs:
     with:
       force: ${{ inputs.force || false }}
       base_branch: ${{ inputs.base_branch || 'main' }}
-      script: ${{ inputs.script || 'npm run all' }}
+      script: ${{ inputs.script || 'npm run build && npm run package' }}
       node_version: "${{ inputs.node_version || '24' }}"
 
 permissions:

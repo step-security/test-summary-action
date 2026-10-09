@@ -1,7 +1,7 @@
 import { expect } from "chai"
 
-import { TestStatus, TestResult } from "../src/test_parser"
-import { dashboardResults } from "../src/dashboard"
+import { TestStatus, TestResult } from "../src/test_parser.js"
+import { dashboardResults } from "../src/dashboard.js"
 
 describe("dashboard", async () => {
     it("escapes HTML entities", async () => {
@@ -31,7 +31,7 @@ describe("dashboard", async () => {
                 }
             ]
         }
-        const actual = dashboardResults(result, TestStatus.Fail)
+        const actual = dashboardResults(result, TestStatus.Fail, false)
         expect(actual).contains("name escaped &lt;properly&gt;")
         expect(actual).contains("description escaped &quot;properly&quot;")
         expect(actual).contains("another name escaped &apos;properly&apos;")
@@ -55,7 +55,7 @@ describe("dashboard", async () => {
                 }
             ]
         }
-        const actual = dashboardResults(result, TestStatus.Fail)
+        const actual = dashboardResults(result, TestStatus.Fail, false)
         expect(actual).contains("&lt;no name&gt;")
     })
 
@@ -76,7 +76,7 @@ describe("dashboard", async () => {
             ]
         }
 
-        const actual = dashboardResults(result, TestStatus.Fail)
+        const actual = dashboardResults(result, TestStatus.Fail, false)
 
         expect(actual).contains("message escaped &lt;properly&gt;")
         expect(actual).contains("details escaped &lt;properly&gt;")

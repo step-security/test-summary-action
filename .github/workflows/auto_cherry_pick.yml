@@ -10,7 +10,7 @@ on:
       script:
         description: 'Script to run after audit fix'
         required: false
-        default: 'npm run all'
+        default: 'npm run build && npm run package'
       node_version:
         description: "Specify Node.js version (e.g., '18', '20', 'lts/*')"
         required: false
@@ -37,7 +37,7 @@ jobs:
       original-owner: "test-summary"
       repo-name: "action"
       base_branch: ${{ inputs.base_branch }}
-      script: ${{ inputs.script || 'npm run all' }}
+      script: ${{ inputs.script || 'npm run build && npm run package' }}
       node_version: "${{ inputs.node_version || '24' }}"
       mode: ${{ github.event_name == 'pull_request' && 'verify' || inputs.mode }}
 

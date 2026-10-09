@@ -1,13 +1,15 @@
-import * as chai from "chai"
 import { expect } from "chai"
 
-import { TestStatus, parseJunitFile } from "../src/test_parser"
+import { TestStatus, parseJunitFile } from "../src/test_parser.js"
+import { resourcePath } from "./common.js"
 
-const resourcePath = `${__dirname}/resources/junit`
+const junitResourcePath = `${resourcePath}/resources/junit`
 
 describe("junit", async () => {
     it("parses common", async () => {
-        const result = await parseJunitFile(`${resourcePath}/01-common.xml`)
+        const result = await parseJunitFile(
+            `${junitResourcePath}/01-common.xml`
+        )
 
         expect(result.counts.passed).to.eql(7)
         expect(result.counts.failed).to.eql(1)
@@ -19,7 +21,9 @@ describe("junit", async () => {
     })
 
     it("parses example", async () => {
-        const result = await parseJunitFile(`${resourcePath}/02-example.xml`)
+        const result = await parseJunitFile(
+            `${junitResourcePath}/02-example.xml`
+        )
 
         expect(result.counts.passed).to.eql(21)
         expect(result.counts.failed).to.eql(9)
@@ -92,7 +96,7 @@ describe("junit", async () => {
     })
 
     it("parses junit", async () => {
-        const result = await parseJunitFile(`${resourcePath}/03-junit.xml`)
+        const result = await parseJunitFile(`${junitResourcePath}/03-junit.xml`)
 
         expect(result.counts.passed).to.eql(4)
         expect(result.counts.failed).to.eql(4)
@@ -140,7 +144,7 @@ describe("junit", async () => {
         // into one Junit testsuite / testcase. This does depend on the actual
         // test platform; my experience is mostly with py_test() targets.
         const result = await parseJunitFile(
-            `${resourcePath}/04-bazel-junit.xml`
+            `${junitResourcePath}/04-bazel-junit.xml`
         )
 
         expect(result.counts.passed).to.eql(1)
@@ -160,7 +164,7 @@ describe("junit", async () => {
     })
 
     it("parses empty testsuites", async () => {
-        const result = await parseJunitFile(`${resourcePath}/05-empty.xml`)
+        const result = await parseJunitFile(`${junitResourcePath}/05-empty.xml`)
 
         expect(result.counts.passed).to.eql(0)
         expect(result.counts.failed).to.eql(0)
@@ -169,7 +173,7 @@ describe("junit", async () => {
     })
 
     it("parses empty testsuite", async () => {
-        const result = await parseJunitFile(`${resourcePath}/06-empty.xml`)
+        const result = await parseJunitFile(`${junitResourcePath}/06-empty.xml`)
 
         expect(result.counts.passed).to.eql(0)
         expect(result.counts.failed).to.eql(0)
@@ -178,9 +182,7 @@ describe("junit", async () => {
     })
 
     it("parses testsuite with no failure message", async () => {
-        const result = await parseJunitFile(
-            `${resourcePath}/07-no-failure-message.xml`
-        )
+        await parseJunitFile(`${junitResourcePath}/07-no-failure-message.xml`)
     })
 
     it("parses attributeless failure tags", async () => {
@@ -188,7 +190,7 @@ describe("junit", async () => {
         // that have no attributes, only inner text.
         // Example: <failure>Failed!</failure>
         const result = await parseJunitFile(
-            `${resourcePath}/08-failure-noattr-only-innertext.xml`
+            `${junitResourcePath}/08-failure-noattr-only-innertext.xml`
         )
         expect(result.suites[0].cases[0].details).to.eql("Failed!")
     })

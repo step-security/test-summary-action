@@ -3,10 +3,24 @@ import * as util from "util"
 
 import xml2js from "xml2js"
 
-export enum TestStatus {
-    Pass = 1 << 0,
-    Fail = 1 << 1,
-    Skip = 1 << 2
+export const TestStatus = {
+    None: 0,
+    Pass: 1 << 0,
+    Fail: 1 << 1,
+    Skip: 1 << 2
+} as const
+
+export function getTestStatusName(value: number): String {
+    switch (value) {
+        case TestStatus.Fail:
+            return "Fail"
+        case TestStatus.Skip:
+            return "Skip"
+        case TestStatus.Pass:
+            return "Pass"
+        default:
+            return "Unknown"
+    }
 }
 
 export interface TestCounts {
@@ -31,7 +45,7 @@ export interface TestSuite {
 }
 
 export interface TestCase {
-    status: TestStatus
+    status: number
     name?: string
     description?: string
     message?: string
@@ -41,12 +55,12 @@ export interface TestCase {
 
 export async function parseTap(data: string): Promise<TestResult> {
     const lines = data.trim().split(/\r?\n/)
-    let version = 12
+    // let version = 12
     let header = 0
     let trailer = false
 
     if (lines.length > 0 && lines[header].match(/^TAP version 13$/)) {
-        version = 13
+        // version = 13
         header++
     }
 
@@ -209,6 +223,11 @@ export async function parseTap(data: string): Promise<TestResult> {
     }
 }
 
+export async function parseTapFile(filename: string): Promise<TestResult> {
+    const readfile = util.promisify(fs.readFile)
+    return await parseTap(await readfile(filename, "utf8"))
+}
+
 async function parseJunitXml(xml: any): Promise<TestResult> {
     let testsuites
 
@@ -304,14 +323,81 @@ export async function parseJunit(data: string): Promise<TestResult> {
     return await parseJunitXml(xml)
 }
 
-export async function parseTapFile(filename: string): Promise<TestResult> {
-    const readfile = util.promisify(fs.readFile)
-    return await parseTap(await readfile(filename, "utf8"))
-}
-
 export async function parseJunitFile(filename: string): Promise<TestResult> {
     const readfile = util.promisify(fs.readFile)
     return await parseJunit(await readfile(filename, "utf8"))
+}
+
+export async function parseTrx(xml: any): Promise<TestResult> {
+    if (
+        xml.TestRun.$.xmlns !=
+            "http://microsoft.com/schemas/VisualStudio/TeamTest/2010" ||
+        !Array.isArray(xml.TestRun.Results)
+    ) {
+        throw new Error("Not a valid .trx file.")
+    }
+
+    const suites: TestSuite[] = []
+    const counts = {
+        passed: 0,
+        failed: 0,
+        skipped: 0
+    }
+
+    for (const result of xml.TestRun.Results) {
+        const cases: TestCase[] = []
+
+        if (!Array.isArray(result.UnitTestResult)) {
+            continue
+        }
+
+        for (const item of result.UnitTestResult) {
+            let status = TestStatus.Pass
+
+            // const id = item.$.testId
+            const name = item.$.testName
+            const duration = item.$.duration
+            const outcome = item.$.outcome
+
+            let message: string | undefined = undefined
+            let details = ""
+
+            const output = item?.Output?.[0]
+            details = `StdOut:${output?.StdOut?.[0]}`
+
+            if (outcome == "Passed") {
+                counts.passed++
+            } else if (outcome == "Failed") {
+                status = TestStatus.Fail
+                counts.failed++
+
+                message = output?.ErrorInfo?.[0]?.Message
+                details = `StackTrace:${output?.ErrorInfo?.[0]?.StackTrace}\n${
+                    details
+                }`
+            } else {
+                status = TestStatus.Pass
+                counts.skipped++
+            }
+
+            cases.push({
+                status,
+                name,
+                message,
+                details,
+                duration
+            })
+        }
+
+        suites.push({
+            cases
+        })
+    }
+
+    return {
+        counts,
+        suites
+    }
 }
 
 export async function parseFile(filename: string): Promise<TestResult> {
@@ -330,8 +416,12 @@ export async function parseFile(filename: string): Promise<TestResult> {
 
     const xml: any = await parser(data)
 
-    if (xml.testsuites || xml.testsuite) {
+    if ("testsuites" in xml || "testsuite" in xml) {
         return await parseJunitXml(xml)
+    }
+
+    if ("TestRun" in xml) {
+        return await parseTrx(xml)
     }
 
     throw new Error(`unknown test file type for '${filename}'`)
